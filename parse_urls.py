@@ -14,9 +14,8 @@ def get_response(url):
             return response
         time.sleep(3)
 
-        if start_time + 30 < time.time():  # Ожидание ответа от сайта более 10 сек -> выходим
+        if start_time + 30 < time.time():  # Ожидание ответа от сайта более 30 сек -> выходим
             return None
-
 
 
 headers = {
@@ -38,18 +37,16 @@ with open(file_name, 'r') as file:
                 itm['fields']['download_status'] = 'failed'
                 ml_collection.insert_one(itm)
                 continue
-            elif 'dts.podtrac.com' in itm['fields']['url'] or itm['fields']['url'][-4:] == '.mp3' or 'cdn.simplecast.com' in itm['fields']['url']:  # Если аудиозапись (3 ссылки)
+            elif ('dts.podtrac.com' in itm['fields']['url'] or
+                  'cdn.simplecast.com' in itm['fields']['url'] or
+                  itm['fields']['url'][-4:] == '.mp3'
+            ):  # Если аудиозапись
                 itm['fields']['article_content'] = 'audio'
                 itm['fields']['download_status'] = 'failed'
                 ml_collection.insert_one(itm)
                 continue
             elif itm['fields']['url'][-4:] == '.mp4':  # Если видеозапись (14 ссылок)
                 itm['fields']['article_content'] = 'video'
-                itm['fields']['download_status'] = 'failed'
-                ml_collection.insert_one(itm)
-                continue
-            elif 'colinpaice.blog' in itm['fields']['url'] or 'blog.cryptographyengineering.com' in itm['fields']['url']:  # Выдает ConnectionError (написать try) (по 1 ссылке)
-                itm['fields']['article_content'] = 'ConnectionError'
                 itm['fields']['download_status'] = 'failed'
                 ml_collection.insert_one(itm)
                 continue
@@ -63,7 +60,6 @@ with open(file_name, 'r') as file:
                     time.sleep(15)
                     print("Was a nice sleep, now let me continue...")
                     continue
-
 
             if not response:  # Если сайт отдает 404
                 itm['fields']['article_content'] = '404'
@@ -90,9 +86,6 @@ with open(file_name, 'r') as file:
         # address = re.findall(r'\/{2}([^\/]*)\/', itm['fields']['url'])
         # address_set.add('.'.join(address[0].split('.')[-2:])) if address else address_set.add('None')
 
-# 13065 ConnectionError не пускает
-# hackaday часто выдает ConnectionError но пропускает
+# hackaday arcanecode youarenotsosmart часто выдает ConnectionError
 # 14278 не хватает в url https://istio.io/
-# 14393 ConnectionError не пускает
-# arcanecode.com, https://youarenotsosmart.com/ тоже глючат
 # сильно плохо если verify=False
