@@ -1,5 +1,4 @@
 import json
-import re
 import requests
 import time
 from bs4 import BeautifulSoup as bs
@@ -10,7 +9,7 @@ import logging
 def get_response(url):
     start_time = time.time()
     while True:
-        response = requests.get(url, headers=headers)  # , verify=False
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return response
         elif response.status_code >= 400:
@@ -72,19 +71,23 @@ with open(file_name, 'r') as file:
                 logging.debug(f"{itm['pk']}___VIDEO - ARTICLE WASN'T ADDED")
                 continue
 
-            tries =
-            while True:  # Зацикливаю из-за ошибки ConnectionError, повторное подключение через 15 сек.
+            tries = 5
+            while tries:  # Зацикливаю из-за ошибки ConnectionError, повторное подключение через 15 сек. 5 попыток
                 try:
                     response = get_response(itm['fields']['url'])
                     break
                 except requests.exceptions.ConnectionError as err:
                     logging.debug(f"{itm['pk']}___ERROR {err}")
                     time.sleep(15)
+                    tries -= 1
                     continue
+            else:
+                response = None
 
-            if not response:  # Если сайт отдает 404
+
+            if not response:  # Если сайт отдает 404 или ConnectionError
                 itm['fields']['article_content'] = None
-                itm['fields']['content_type'] = '404'
+                itm['fields']['content_type'] = '404 or ConnectionError'
                 itm['fields']['download_status'] = 'failed'
                 ml_collection.insert_one(itm)
                 logging.debug(f"{itm['pk']}___404 - ARTICLE WASN'T ADDED")
@@ -107,10 +110,3 @@ with open(file_name, 'r') as file:
             itm['fields']['article_content'] = article_content
             ml_collection.insert_one(itm)
             logging.info(f"{itm['pk']}___ADDED INTO DB")
-
-        # address = re.findall(r'\/{2}([^\/]*)\/', itm['fields']['url'])
-        # address_set.add('.'.join(address[0].split('.')[-2:])) if address else address_set.add('None')
-
-# hackaday arcanecode youarenotsosmart часто выдает ConnectionError
-# 14278 не хватает в url https://istio.io/
-# сильно плохо если verify=False
