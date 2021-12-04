@@ -1,5 +1,7 @@
 import json
 import re
+import sys
+
 import requests
 import time
 from bs4 import BeautifulSoup as bs
@@ -56,7 +58,7 @@ with open(file_name, 'r') as file:
                     response = get_response(itm['fields']['url'])
                     break
                 except requests.exceptions.ConnectionError:
-                    print("Connection refused by the server. Let me sleep for 15 seconds.")
+                    print("Connection refused by the server. Let me sleep for 15 seconds.", file=sys.stderr)
                     time.sleep(15)
                     print("Was a nice sleep, now let me continue...")
                     continue
@@ -86,6 +88,5 @@ with open(file_name, 'r') as file:
         # address = re.findall(r'\/{2}([^\/]*)\/', itm['fields']['url'])
         # address_set.add('.'.join(address[0].split('.')[-2:])) if address else address_set.add('None')
 
-# hackaday arcanecode youarenotsosmart часто выдает ConnectionError
 # 14278 не хватает в url https://istio.io/
 # сильно плохо если verify=False

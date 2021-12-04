@@ -1,50 +1,41 @@
-import typing
-from pymongo import MongoClient
-from pymongo.collection import Collection
+# from pymongo import MongoClient
+#
+# client = MongoClient('localhost')
+# db = client['ml_digest']
+# ml_collection = db.ml_collection
+# simple_collection = db.simple_collection
+#
+# for i in ml_collection.find():
+#     one_dict = dict()
+#     one_dict['model'] = i['model']
+#     one_dict['pk'] = i['pk']
+#     for fields_key, fields_value in i['fields'].items():
+#         one_dict[fields_key] = fields_value
+#
+#     simple_collection.insert_one(one_dict)
+
+import numpy as np
+
+A = [[1,2,3], [4,5,6]]
+B = [[7,8], [9,10], [11,12]]
+C = [[7,8], [9,10], [11,12], [13, 14]]
 
 
-class MyMongoClient:
-    def __init__(self):
-        self._client = MongoClient('localhost')
-        self._db = self._client['ml_base']
+def matrix_mul(a, b):
+    if len(a[0]) != len(b):
+        return "Incorrect matrix size for multiplying"
+    else:
+        c = [[0 for _0 in range(len(b[0]))] for _1 in range(len(a))]
+        for ic1 in range(len(c)):
+            ib2 = 0
+            for i1 in range(len(b[0])):
+                counter = 0
+                for i2 in range(len(a[0])):
+                    counter += a[ic1][i2] * b[i2][ib2]
+                c[ic1][i1] = counter
+                ib2 += 1
+        return c
 
-    @property
-    def client(self):
-        return self._client
 
-    @property
-    def database(self):
-        return self._db
+print(matrix_mul(C, A))
 
-    def create_collection(self, name: str) -> Collection:
-        """
-        Создать объект коллекции
-        """
-        return self.database.create_collection(name)
-
-    def get_collection(self, name: str) -> Collection:
-        """
-        Получить объект коллекции
-        """
-        return self.database.get_collection(name)
-
-    def save_and_update_database(self, collection: Collection, dataset: typing.List):
-        """
-        Проверить список данных на наличие в БД, если их нет, то сохранить в БД
-        """
-        new_objects = []
-        for data in dataset:
-            filters = {'$and': [{"name": data.get('name')},
-                                {"date_publication": data.get('date_publication')}]}
-            obj = self.get_documents_collection(collection, filters)
-            if not list(obj):
-                new_objects.append(data)
-        if new_objects:
-            collection.insert_many(new_objects)
-            [print(f'Записано {_}') for _ in new_objects]
-
-    def get_documents_collection(self, collection: Collection, filters: dict = {}):
-        """
-        Получить список документов конкретной коллекции, соответствующий фильтру
-        """
-        return list(collection.find(filters))
